@@ -8,6 +8,27 @@ const bootstrapAdmin = require('./utils/bootstrapAdmin');
 
 const app = express();
 
+const normalizeOrigin = (value = '') => value.trim().replace(/\/+$/, '');
+const allowedOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map(normalizeOrigin)
+  .filter(Boolean);
+
+const corsOptions = {
+  origin(origin, callback) {
+    // Allow non-browser requests (no Origin header), like health checks.
+    if (!origin) return callback(null, true);
+
+    const incoming = normalizeOrigin(origin);
+    if (allowedOrigins.length === 0 || allowedOrigins.includes(incoming)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+};
+
 // ─── Rate Limiting ────────────────────────────────────────────
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -21,10 +42,7 @@ const authLimiter = rateLimit({
 });
 
 // ─── Middleware ────────────────────────────────────────────────
-app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
-  credentials: true
-}));
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'combined'));
 app.use('/api', limiter);
