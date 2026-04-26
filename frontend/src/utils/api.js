@@ -1,7 +1,10 @@
 import axios from 'axios'
 
+const PROD_API_FALLBACK = 'https://findraft-1.onrender.com/api'
+const baseURL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? PROD_API_FALLBACK : '/api')
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL,
   timeout: 15000,
 })
 
